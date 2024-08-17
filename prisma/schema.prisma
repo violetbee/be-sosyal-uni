@@ -1,0 +1,234 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["omitApi"]
+}
+
+datasource db {
+  provider = "postgresql"
+  // NOTE: When using postgresql, mysql or sqlserver, uncomment the @db.Text annotations in model Account below
+  // Further reading: 
+  // https://next-auth.js.org/adapters/prisma#create-the-prisma-schema
+  // https://www.prisma.io/docs/reference/api-reference/prisma-schema-reference#string
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String      @id @default(cuid())
+  createdAt            DateTime    @default(now())
+  name                 String?
+  surname              String?
+  username             String?
+  email                String      @unique
+  emailVerified        DateTime?
+  password             String
+  bio                  String?
+  image                String?
+  score                Int         @default(0)
+  grade                Int         @default(1)
+  userRole             USER_ROLE   @default(STUDENT)
+  posts                Post[]
+  comments             Comment[]
+  events               Event[]
+  university           University? @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  universityId         String?
+  selectedUniversityId String?
+  department           Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId         String?
+  schoolClub           SchoolClub? @relation(fields: [schoolClubId], references: [id], onDelete: Cascade)
+  schoolClubId         String?
+}
+
+enum USER_ROLE {
+  STUDENT
+  TEACHER
+  ADMIN
+  MODERATOR
+  SCHOOL_CLUB_MEMBER
+  SCHOOL_CLUB_REPRESENTETIVE
+  EVENT_ORGANIZER
+}
+
+model University {
+  id                     String                   @id @default(cuid())
+  name                   String
+  slug                   String                   @unique
+  location               String
+  logo                   String?
+  users                  User[]
+  events                 Event[]
+  departments            UniversityOnDepartment[]
+  posts                  Post[]
+  schoolClub             SchoolClub[]
+  schoolClubOnUniversity SchoolClubOnUniversity[]
+}
+
+model Department {
+  id            String                   @id @default(cuid())
+  createdAt     DateTime                 @default(now()) @db.Timestamp(6)
+  name          String
+  slug          String                   @unique
+  maxClassLevel Int
+  users         User[]
+  classes       Class[]
+  universities  UniversityOnDepartment[]
+  posts         Post[]
+}
+
+model UniversityOnDepartment {
+  createdAt    DateTime   @default(now()) @db.Timestamp(6)
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  universityId String
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId String
+
+  @@id([universityId, departmentId])
+}
+
+model Class {
+  id           String     @id @default(cuid())
+  name         String
+  slug         String     @unique
+  level        Int?
+  department   Department @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  departmentId String
+  posts        Post[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now()) @db.Timestamp(6)
+  name      String
+  slug      String   @unique
+  image     String?
+  color     String?
+  posts     Post[]
+}
+
+model SchoolClub {
+  id                     String                   @id @default(cuid())
+  createdAt              DateTime                 @default(now()) @db.Timestamp(6)
+  name                   String
+  description            String?
+  slug                   String                   @unique
+  banner                 String?
+  rating                 Float?
+  comments               Comment[]
+  users                  User[]
+  events                 Event[]
+  schoolClubOnUniversity SchoolClubOnUniversity[]
+  university             University?              @relation(fields: [universityId], references: [id])
+  universityId           String?
+
+  @@unique([universityId, slug])
+}
+
+model SchoolClubOnUniversity {
+  createdAt    DateTime   @default(now()) @db.Timestamp(6)
+  university   University @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  universityId String
+  schoolClub   SchoolClub @relation(fields: [schoolClubId], references: [id], onDelete: Cascade)
+  schoolClubId String
+
+  @@id([universityId, schoolClubId])
+}
+
+enum PostType {
+  TEXT
+  FILE
+}
+
+model Post {
+  id           String      @id @default(cuid())
+  createdAt    DateTime    @default(now()) @db.Timestamp(6)
+  slug         String      @unique
+  title        String
+  content      String
+  image        String?
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  files        File[]
+  tags         String[]
+  comments     Comment[]
+  category     Category?   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  categoryId   String?
+  university   University? @relation(fields: [universityId], references: [id])
+  universityId String?
+  department   Department? @relation(fields: [departmentId], references: [id])
+  departmentId String?
+  class        Class?      @relation(fields: [classId], references: [id])
+  classId      String?
+  likedUsers   String[]
+  postType     PostType    @default(TEXT)
+}
+
+enum EventPermission {
+  ALL
+  CLASS_MEMBER
+  DEPARTMENT_MEMBER
+  UNIVERSITY_MEMBER
+  SCHOOL_CLUB_MEMBER
+}
+
+model Event {
+  id           String          @id @default(cuid())
+  createdAt    DateTime        @default(now()) @db.Timestamp(6)
+  startDate    DateTime        @db.Timestamp(6)
+  endDate      DateTime        @db.Timestamp(6)
+  title        String
+  price        Float?
+  description  String
+  image        String?
+  slug         String?
+  location     String
+  permission   EventPermission @default(ALL)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  eventType    EventType       @relation(fields: [eventTypeId], references: [id], onDelete: Cascade)
+  eventTypeId  String
+  university   University?     @relation(fields: [universityId], references: [id])
+  universityId String?
+  schoolClub   SchoolClub?     @relation(fields: [schoolClubId], references: [id])
+  schoolClubId String?
+}
+
+model EventType {
+  id     String  @id @default(cuid())
+  name   String
+  slug   String?
+  events Event[]
+}
+
+model File {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  name      String
+  url       String
+  size      Int
+  type      String
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId    String?
+}
+
+model Comment {
+  id           String      @id @default(cuid())
+  createdAt    DateTime    @default(now())
+  content      String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId       String
+  post         Post        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  postId       String
+  SchoolClub   SchoolClub? @relation(fields: [schoolClubId], references: [id])
+  schoolClubId String?
+  likedUsers   String[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
