@@ -1,5 +1,5 @@
 import { prisma } from "../../utils/db";
-import { publishedTimeAgo } from "../../utils/general";
+import { publishedTimeAgo, slugify } from "../../utils/general";
 import { PostType } from "./types";
 
 export const _getAllPosts = async ({
@@ -13,10 +13,18 @@ export const _getAllPosts = async ({
   slug,
 }) => {
   const posts = await prisma.post.findMany({
-    skip: pageNumber * pageSize,
-    take: pageSize,
+    orderBy: {
+      createdAt: "desc",
+    },
+    skip: (+pageNumber - 1) * +pageSize,
+    take: +pageSize,
     where: {
       universityId,
+      departmentId,
+      class: {
+        level,
+      },
+      classId,
       postType,
       category: {
         slug: slug ? { in: slug } : undefined,
@@ -27,6 +35,11 @@ export const _getAllPosts = async ({
   const count = await prisma.post.count({
     where: {
       universityId,
+      departmentId,
+      class: {
+        level,
+      },
+      classId,
       postType,
       category: {
         slug: slug ? { in: slug } : undefined,
@@ -46,7 +59,33 @@ export const _getAllPosts = async ({
   return { data, count };
 };
 
-export const _getPostById = async (id: string, postType: PostType) => {
+export const _createPost = async (data: any) => {
+  const post = await prisma.post.create({
+    data: {
+      ...data,
+      slug: await slugify(data.title, prisma),
+      files: data.postType === PostType.FILE &&
+        data.files.length > 0 && {
+          createMany: {
+            data: data.files.map((file: any) => ({
+              name: file.name,
+              size: file.size,
+              type: file.type,
+              url: file.url,
+            })),
+          },
+        },
+    },
+  });
+
+  if (!post) {
+    throw new Error("Gönderi oluşturulurken bir hata oluştu.");
+  }
+
+  return post;
+};
+
+export const _getPostById = async (id: string) => {
   const post = await prisma.post.findUnique({
     where: {
       id,
@@ -56,22 +95,23 @@ export const _getPostById = async (id: string, postType: PostType) => {
       title: true,
       content: true,
       createdAt: true,
-      image: postType === PostType.TEXT,
+      postType: true,
+      image: true,
       tags: true,
       likedUsers: true,
-      category: postType === PostType.TEXT && {
+      category: {
         select: {
           name: true,
           slug: true,
         },
       },
-      department: postType === PostType.FILE && {
+      department: {
         select: {
           name: true,
           slug: true,
         },
       },
-      files: postType === PostType.FILE && {
+      files: {
         select: {
           id: true,
           name: true,
@@ -105,7 +145,16 @@ export const _getPostById = async (id: string, postType: PostType) => {
     throw new Error("Gönderi bulunamadı.");
   }
 
-  return post;
+  const postType = post.postType as PostType;
+
+  return {
+    ...post,
+    image: postType === PostType.TEXT ? post.image : null,
+    category: postType === PostType.TEXT ? post.category : null,
+    department: postType === PostType.FILE ? post.department : null,
+    files: postType === PostType.FILE ? post.files : null,
+    timeAgo: publishedTimeAgo(post.createdAt),
+  };
 };
 
 export const _removePostById = async (id: string) => {

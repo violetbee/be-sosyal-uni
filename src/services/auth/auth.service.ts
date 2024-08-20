@@ -27,10 +27,22 @@ export const _login = async (email: string, password: string) => {
     "refresh"
   );
 
-  return { accessToken, refreshToken };
+  return { accessToken, refreshToken, user };
 };
 
 export const _register = async (data: RegisterBody) => {
+  const isUserExist = await prisma.user.findUnique({
+    where: {
+      email: data.email,
+    },
+  });
+
+  if (isUserExist) {
+    throw new Error(
+      "Bu e-posta adresi ile kayıtlı bir kullanıcı bulunmaktadır."
+    );
+  }
+
   const user = await prisma.user.create({
     data: {
       ...data,

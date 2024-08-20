@@ -5,12 +5,15 @@ import EventRouter from "./event";
 import PostRouter from "./post";
 import { AuthMiddleware } from "../middlewares/auth";
 import { isUniversitySelected } from "../middlewares/permissions";
+import { restrictRoutes } from "../utils/route";
 
 const routeHandler = (app: Express) => {
-  app.use("/user", AuthMiddleware, UserRouter);
+  app.use(restrictRoutes(AuthMiddleware, ["/auth"]));
+  app.use(restrictRoutes(isUniversitySelected, ["/auth", "/user/me"]));
+  app.use("/user", UserRouter);
   app.use("/auth", AuthRouter);
-  app.use("/event", AuthMiddleware, isUniversitySelected, EventRouter);
-  app.use("/post", AuthMiddleware, isUniversitySelected, PostRouter);
+  app.use("/event", EventRouter);
+  app.use("/post", PostRouter);
 };
 
 export default routeHandler;

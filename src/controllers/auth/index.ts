@@ -16,7 +16,14 @@ export const login = async (req: Request, res: Response) => {
       })
       .header("authorization", accessToken)
       .status(200)
-      .json({ message: "Giriş işlemi başarılı!" });
+      .json({
+        message: "Giriş işlemi başarılı!",
+        user: {
+          id: auth.user.id,
+          email: auth.user.email,
+          name: auth.user.name,
+        },
+      });
   } catch (error: any) {
     return res.status(500).json({
       error: error.message,

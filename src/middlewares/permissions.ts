@@ -1,6 +1,7 @@
-import { NextFunction, Request, Response } from "express";
+import { NextFunction, Response } from "express";
 import { prisma } from "../utils/db";
 import { CustomRequest } from "./auth";
+import { JwtUser } from "../routes/types";
 
 export const isUniversitySelected = async (
   req: CustomRequest,
@@ -8,7 +9,6 @@ export const isUniversitySelected = async (
   next: NextFunction
 ) => {
   const userId = req.user?.id;
-
   const data = await prisma.user.findUnique({
     where: {
       id: userId,
@@ -26,6 +26,9 @@ export const isUniversitySelected = async (
         "Herhangi bir üniversite seçili değil. Lütfen profil ayarlarınızdan bir üniversite seçiniz.",
     });
   }
+
+  req.user = { ...req.user, selectedUniversityId } as JwtUser;
+
   next();
 };
 

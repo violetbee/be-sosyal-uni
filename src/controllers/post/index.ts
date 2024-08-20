@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import {
+  _createPost,
   _getAllPosts,
   _getPostById,
   _removePostById,
@@ -7,6 +8,7 @@ import {
 } from "../../services/post/post.service";
 import { PostType } from "../../services/post/types";
 import { CustomRequest } from "../../middlewares/auth";
+import { CreatePostScheme } from "./schemes/index.scheme";
 
 export const getAllPosts = async (req: CustomRequest, res: Response) => {
   const { departmentId, level, classId, postType, pageSize, pageNumber, slug } =
@@ -39,13 +41,27 @@ export const getAllPosts = async (req: CustomRequest, res: Response) => {
 
 export const getPostById = async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { type } = req.query;
 
   try {
-    const post = await _getPostById(id, type as PostType);
+    const post = await _getPostById(id);
     return res.status(200).json({
       data: post,
       message: "Gönderi başarıyla getirildi.",
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      error: error.message,
+    });
+  }
+};
+
+export const createPost = async (req: CustomRequest, res: Response) => {
+  const data = req.body as CreatePostScheme;
+  const universityId = req.user?.selectedUniversityId;
+  try {
+    await _createPost({ ...data, universityId });
+    return res.status(201).json({
+      message: "Gönderi başarıyla oluşturuldu.",
     });
   } catch (error: any) {
     return res.status(500).json({

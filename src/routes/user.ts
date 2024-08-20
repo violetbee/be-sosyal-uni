@@ -4,8 +4,8 @@ import { isUniversitySelected } from "../middlewares/permissions";
 
 const router = Router();
 
-router.get("/", isUniversitySelected, getAllUsers);
+router.get("/", getAllUsers);
 router.get("/me", getMe);
-router.get("/:id", isUniversitySelected, getUserById);
+router.get("/:id", getUserById);
 
 export default router;
