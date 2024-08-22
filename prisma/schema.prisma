@@ -16,29 +16,31 @@ datasource db {
 }
 
 model User {
-  id                   String      @id @default(cuid())
-  createdAt            DateTime    @default(now())
+  id                   String          @id @default(cuid())
+  createdAt            DateTime        @default(now())
   name                 String?
   surname              String?
   username             String?
-  email                String      @unique
+  email                String          @unique
   emailVerified        DateTime?
   password             String
   bio                  String?
   image                String?
-  score                Int         @default(0)
-  grade                Int         @default(1)
-  userRole             USER_ROLE   @default(STUDENT)
+  score                Int             @default(0)
+  grade                Int             @default(1)
+  userRole             USER_ROLE       @default(STUDENT)
   posts                Post[]
   comments             Comment[]
   events               Event[]
-  university           University? @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  university           University?     @relation(fields: [universityId], references: [id], onDelete: Cascade)
   universityId         String?
   selectedUniversityId String?
-  department           Department? @relation(fields: [departmentId], references: [id], onDelete: Cascade)
+  department           Department?     @relation(fields: [departmentId], references: [id], onDelete: Cascade)
   departmentId         String?
-  schoolClub           SchoolClub? @relation(fields: [schoolClubId], references: [id], onDelete: Cascade)
+  schoolClub           SchoolClub?     @relation(fields: [schoolClubId], references: [id], onDelete: Cascade)
   schoolClubId         String?
+  likedPosts           LikedPosts[]
+  likedComments        LikedComments[]
 }
 
 enum USER_ROLE {
@@ -141,27 +143,27 @@ enum PostType {
 }
 
 model Post {
-  id           String      @id @default(cuid())
-  createdAt    DateTime    @default(now()) @db.Timestamp(6)
-  slug         String      @unique
+  id           String       @id @default(cuid())
+  createdAt    DateTime     @default(now()) @db.Timestamp(6)
+  slug         String       @unique
   title        String
   content      String
   image        String?
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
   files        File[]
   tags         String[]
   comments     Comment[]
-  category     Category?   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  category     Category?    @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   categoryId   String?
-  university   University? @relation(fields: [universityId], references: [id])
+  university   University?  @relation(fields: [universityId], references: [id])
   universityId String?
-  department   Department? @relation(fields: [departmentId], references: [id])
+  department   Department?  @relation(fields: [departmentId], references: [id])
   departmentId String?
-  class        Class?      @relation(fields: [classId], references: [id])
+  class        Class?       @relation(fields: [classId], references: [id])
   classId      String?
-  likedUsers   String[]
-  postType     PostType    @default(TEXT)
+  postType     PostType     @default(TEXT)
+  likes        LikedPosts[]
 }
 
 enum EventPermission {
@@ -213,16 +215,34 @@ model File {
 }
 
 model Comment {
-  id           String      @id @default(cuid())
-  createdAt    DateTime    @default(now())
+  id           String          @id @default(cuid())
+  createdAt    DateTime        @default(now())
   content      String
-  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId       String
-  post         Post        @relation(fields: [postId], references: [id], onDelete: Cascade)
+  post         Post            @relation(fields: [postId], references: [id], onDelete: Cascade)
   postId       String
-  SchoolClub   SchoolClub? @relation(fields: [schoolClubId], references: [id])
+  schoolClub   SchoolClub?     @relation(fields: [schoolClubId], references: [id])
   schoolClubId String?
-  likedUsers   String[]
+  likes        LikedComments[]
+}
+
+model LikedPosts {
+  postId String
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([postId, userId])
+}
+
+model LikedComments {
+  commentId String
+  comment   Comment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([commentId, userId])
 }
 
 model VerificationToken {

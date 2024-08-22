@@ -30,6 +30,19 @@ export const _getAllPosts = async ({
         slug: slug ? { in: slug } : undefined,
       },
     },
+    include: {
+      likes: {
+        select: {
+          user: {
+            select: {
+              id: true,
+              image: true,
+              name: true,
+            },
+          },
+        },
+      },
+    },
   });
 
   const count = await prisma.post.count({
@@ -98,7 +111,17 @@ export const _getPostById = async (id: string) => {
       postType: true,
       image: true,
       tags: true,
-      likedUsers: true,
+      likes: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              image: true,
+              name: true,
+            },
+          },
+        },
+      },
       category: {
         select: {
           name: true,

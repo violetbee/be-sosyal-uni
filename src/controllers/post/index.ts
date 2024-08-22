@@ -6,7 +6,6 @@ import {
   _removePostById,
   _updatePostById,
 } from "../../services/post/post.service";
-import { PostType } from "../../services/post/types";
 import { CustomRequest } from "../../middlewares/auth";
 import { CreatePostScheme } from "./schemes/index.scheme";
 
