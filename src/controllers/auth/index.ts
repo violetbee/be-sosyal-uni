@@ -13,8 +13,14 @@ export const login = async (req: Request, res: Response) => {
     res
       .cookie("refreshToken", refreshToken, {
         httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
       })
-      .header("authorization", accessToken)
+      .cookie("accessToken", accessToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+      })
       .status(200)
       .json({
         message: "Giriş işlemi başarılı!",
@@ -22,6 +28,9 @@ export const login = async (req: Request, res: Response) => {
           id: auth.user.id,
           email: auth.user.email,
           name: auth.user.name,
+          accessToken,
+          createdAt: Date.now(),
+          expireDate: Date.now() + 1000 * 60 * 30,
         },
       });
   } catch (error: any) {
@@ -56,8 +65,29 @@ export const refreshToken = async (req: Request, res: Response) => {
   const { id, email } = verifyToken(refreshToken);
   const accessToken = generateToken({ id, email });
 
-  return res
-    .header("authorization", accessToken)
-    .status(200)
-    .json({ message: "Token refreshed" });
+  res.cookie("accessToken", accessToken, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/",
+  });
+  res.status(200).json({
+    accessToken,
+    createdAt: Date.now(),
+    expireDate: Date.now() + 1000 * 60 * 30,
+  });
+};
+
+export const logout = async (req: Request, res: Response) => {
+  res.clearCookie("accessToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+  res.status(200).json({ message: "Çıkış işlemi başarılı!" });
 };

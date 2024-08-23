@@ -6,6 +6,7 @@ import PostRouter from "./post";
 import UniversityRouter from "./university";
 import CategoryRouter from "./category";
 import CommentRouter from "./comment";
+import LikeRouter from "./like";
 import { AuthMiddleware } from "../middlewares/auth";
 import { isUniversitySelected } from "../middlewares/permissions";
 import { restrictRoutes } from "../utils/route";
@@ -25,6 +26,7 @@ const routeHandler = (app: Express) => {
   app.use("/university", UniversityRouter);
   app.use("/category", CategoryRouter);
   app.use("/comment", CommentRouter);
+  app.use("/like", LikeRouter);
   app.use("*", (req, res) => {
     res.status(404).json({
       error: "Erişmeye çalıştığınız sayfa bulunamadı.",

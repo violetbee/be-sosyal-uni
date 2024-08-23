@@ -4,7 +4,7 @@ import { JwtUser } from "../routes/types";
 export const generateToken = (decoder: JwtPayload, type = "access") => {
   const { id, email } = decoder;
   return jwt.sign({ id, email }, process.env.JWT_SECRET!, {
-    expiresIn: type === "access" ? "30m" : "10d",
+    expiresIn: type === "access" ? "30m" : "120d",
   });
 };
 
